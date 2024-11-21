@@ -5,17 +5,17 @@ import type { OAppEdgeConfig, OAppOmniGraphHardhat, OmniPointHardhat } from '@la
 
 const sepoliaContract: OmniPointHardhat = {
     eid: EndpointId.SEPOLIA_V2_TESTNET,
-    contractName: 'MyONFT721',
+    contractName: 'NonFungibleMood',
 }
 
 const fujiContract: OmniPointHardhat = {
     eid: EndpointId.AVALANCHE_V2_TESTNET,
-    contractName: 'MyONFT721',
+    contractName: 'NonFungibleMood',
 }
 
 const amoyContract: OmniPointHardhat = {
     eid: EndpointId.AMOY_V2_TESTNET,
-    contractName: 'MyONFT721',
+    contractName: 'NonFungibleMood',
 }
 
 const DEFAULT_EDGE_CONFIG: OAppEdgeConfig = {
