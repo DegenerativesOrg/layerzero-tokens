@@ -25,7 +25,7 @@ describe('FungibleMood Test', function () {
         // Contract factory for our tested contract
         //
         // We are using a derived contract that exposes a mint() function for testing purposes
-        FungibleMood = await ethers.getContractFactory('FungibleMoodMock')
+        FungibleMood = await ethers.getContractFactory('FungibleMood')
 
         // Fetching the first three signers (accounts) from Hardhat's local Ethereum network
         const signers = await ethers.getSigners()
@@ -68,7 +68,7 @@ describe('FungibleMood Test', function () {
     it('should send a token from A address to B address via each OFT', async function () {
         // Minting an initial amount of tokens to ownerA's address in the FungibleMoodA contract
         const initialAmount = ethers.utils.parseEther('100')
-        await FungibleMoodA.mint(ownerA.address, initialAmount)
+        await FungibleMoodA.claim(ownerA.address, initialAmount)
 
         // Defining the amount of tokens to send and constructing the parameters for the send operation
         const tokensToSend = ethers.utils.parseEther('1')
