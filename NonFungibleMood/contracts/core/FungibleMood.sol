@@ -3,20 +3,18 @@
 pragma solidity ^0.8.22;
 
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IERC20, ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
-import { OFT } from "@layerzerolabs/oft-evm/contracts/OFT.sol";
-import { IFungibleMood } from "./interface/IFungibleMood.sol";
+import { IFungibleMood } from "../interface/IFungibleMood.sol";
 
 /// @title FungibleMood
 /// @author Rald Blox | raldblox.eth
 /// @notice This contract implements a fungible token (MOOD) with cross-chain functionality using LayerZero OFT.
 /// It also includes migration functionality from an old token contract.
-contract FungibleMood is OFT, IFungibleMood {
+contract FungibleMood is ERC20, IFungibleMood, Ownable {
     address immutable NONFUNGIBLEMOOD; // Address of the non-fungible MOOD contract
     address immutable OLDMOOD; // Address of the old MOOD token contract
     uint256 immutable ENDOFMIGRATION = 1735689600; // Jan-01-2025 12:00:00 AM
-    uint256 public immutable MAXTOKENSUPPLY = 100000 * 10 ** 18; //
 
     /// @notice Constructor initializes the OFT contract and sets important addresses.
     /// @param _lzEndpoint Address of the LayerZero endpoint.
@@ -28,7 +26,7 @@ contract FungibleMood is OFT, IFungibleMood {
         address _delegate,
         address _nonFungibleMood,
         address _moodAddress
-    ) OFT("Fungible Mood", "MOOD", _lzEndpoint, _delegate) Ownable(_delegate) {
+    ) ERC20("Fungible Mood", "MOOD") Ownable(_delegate) {
         NONFUNGIBLEMOOD = _nonFungibleMood;
         OLDMOOD = _moodAddress;
     }
@@ -45,8 +43,6 @@ contract FungibleMood is OFT, IFungibleMood {
     /// @return True if minting was successful.
     function claim(address _account, uint256 _value) external returns (bool) {
         require(NONFUNGIBLEMOOD == msg.sender, "Only non-fungible mood can issue reward");
-        // Check if minting would exceed the maximum supply
-        require(totalSupply() + _value <= MAXTOKENSUPPLY, "Maximum token supply reached");
         _mint(_account, _value);
         return true;
     }
@@ -67,7 +63,6 @@ contract FungibleMood is OFT, IFungibleMood {
     /// @return True if migration was successful.
     function migrate(uint256 _value) external returns (bool) {
         require(timeNow() > ENDOFMIGRATION, "Migration ended");
-        require(totalSupply() + (_value / 1000) <= MAXTOKENSUPPLY, "Maximum token supply reached");
         require(IERC20(OLDMOOD).transfer(address(0xdead), _value), "Failed to burn old tokens");
         _mint(msg.sender, (_value / 1000));
         return true;

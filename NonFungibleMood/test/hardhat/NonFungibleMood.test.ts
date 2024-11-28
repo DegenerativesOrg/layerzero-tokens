@@ -9,14 +9,24 @@ describe('NonFungibleMood Test', function () {
     // Constant representing a mock Endpoint ID for testing purposes
     const eidA = 1
     const eidB = 2
+
+    let moodData: any
+    let moodData1: any
+
     // Declaration of variables to be used in the test suite
     let NonFungibleMood: ContractFactory
+    let FungibleMood: ContractFactory
     let EndpointV2Mock: ContractFactory
+    let MoodBank: ContractFactory
     let ownerA: SignerWithAddress
     let ownerB: SignerWithAddress
     let endpointOwner: SignerWithAddress
     let NonFungibleMoodA: Contract
     let NonFungibleMoodB: Contract
+    let FungibleMoodA: Contract
+    let FungibleMoodB: Contract
+    let MoodBankA: Contract
+    let MoodBankB: Contract
     let mockEndpointV2A: Contract
     let mockEndpointV2B: Contract
 
@@ -25,7 +35,9 @@ describe('NonFungibleMood Test', function () {
         // Contract factory for our tested contract
         //
         // We are using a derived contract that exposes a mint() function for testing purposes
-        NonFungibleMood = await ethers.getContractFactory('NonFungibleMoodMock')
+        NonFungibleMood = await ethers.getContractFactory('NonFungibleMood')
+        FungibleMood = await ethers.getContractFactory('FungibleMood')
+        MoodBank = await ethers.getContractFactory('MoodBank')
 
         // Fetching the first three signers (accounts) from Hardhat's local Ethereum network
         const signers = await ethers.getSigners()
@@ -51,9 +63,59 @@ describe('NonFungibleMood Test', function () {
         mockEndpointV2A = await EndpointV2Mock.deploy(eidA)
         mockEndpointV2B = await EndpointV2Mock.deploy(eidB)
 
+        moodData = {
+            chainId: 1,
+            timestamp: Math.floor(Date.now() / 1000),
+            emojis: ['😊', '😎', '🚀'],
+            themeAddress: ownerA.address,
+            bgColor: 'blue',
+            fontColor: 'white',
+            expansionLevel: 5,
+            user: ownerA.address,
+        }
+
+        moodData1 = {
+            chainId: 1,
+            timestamp: Math.floor(Date.now() / 1000),
+            emojis: ['🚀', '🚀', '🚀'],
+            themeAddress: ownerA.address,
+            bgColor: 'blue',
+            fontColor: 'white',
+            expansionLevel: 5,
+            user: ownerA.address,
+        }
+
+        const network = await ethers.provider.getNetwork()
+
         // Deploying two instances of FungibleMood contract with different identifiers and linking them to the mock LZEndpoint
-        NonFungibleMoodA = await NonFungibleMood.deploy('aONFT721', 'aONFT721', mockEndpointV2A.address, ownerA.address)
-        NonFungibleMoodB = await NonFungibleMood.deploy('bONFT721', 'bONFT721', mockEndpointV2B.address, ownerB.address)
+        NonFungibleMoodA = await NonFungibleMood.deploy(mockEndpointV2A.address, ownerA.address, network.chainId)
+        NonFungibleMoodB = await NonFungibleMood.deploy(mockEndpointV2B.address, ownerB.address, network.chainId)
+
+        FungibleMoodA = await FungibleMood.deploy(
+            mockEndpointV2A.address,
+            ownerA.address,
+            NonFungibleMoodA.address,
+            ownerB.address
+        )
+        FungibleMoodB = await FungibleMood.deploy(
+            mockEndpointV2A.address,
+            ownerA.address,
+            NonFungibleMoodB.address,
+            ownerB.address
+        )
+
+        // Mood Banks
+        MoodBankA = await MoodBank.connect(ownerA).deploy()
+        MoodBankB = await MoodBank.connect(ownerB).deploy()
+
+        await MoodBankA.connect(ownerA).authorize(ownerA.address, true)
+        await MoodBankB.connect(ownerB).authorize(ownerA.address, true)
+        await MoodBankA.connect(ownerA).authorize(NonFungibleMoodA.address, true)
+        await MoodBankB.connect(ownerB).authorize(NonFungibleMoodB.address, true)
+        await NonFungibleMoodA.connect(ownerA).setupMoodBank(MoodBankA.address)
+        await NonFungibleMoodB.connect(ownerB).setupMoodBank(MoodBankB.address)
+        await NonFungibleMoodA.connect(ownerA).setupFungibleMood(FungibleMoodA.address)
+        await NonFungibleMoodB.connect(ownerB).setupFungibleMood(FungibleMoodB.address)
 
         // Setting destination endpoints in the LZEndpoint mock for each NonFungibleMood instance
         await mockEndpointV2A.setDestLzEndpoint(NonFungibleMoodB.address, mockEndpointV2B.address)
@@ -64,11 +126,32 @@ describe('NonFungibleMood Test', function () {
         await NonFungibleMoodB.connect(ownerB).setPeer(eidA, ethers.utils.zeroPad(NonFungibleMoodA.address, 32))
     })
 
+    it('should add a mood and retrieve it', async function () {
+        // 1. Encode mood data
+
+        const encodedMoodData = await MoodBankA.connect(ownerA).encodeMood(moodData)
+        const moodId = await MoodBankA.connect(ownerA).addMood(encodedMoodData)
+
+        // 2. Add mood to MoodBankA
+        const moodSupply = await MoodBankA.connect(ownerA).totalMood()
+
+        // 3. Retrieve mood data
+        const retrievedMood = await MoodBankA.connect(ownerA).getMoodDataByIndex(ownerA.address, 0)
+
+        // 4. Assertions
+        expect(Number(retrievedMood.chainId)).to.equal(moodData.chainId)
+        expect(Number(retrievedMood.timestamp)).to.equal(moodData.timestamp)
+        expect(retrievedMood.emojis).to.deep.equal(moodData.emojis)
+    })
+
     // A test case to verify token transfer functionality
     it('should send a token from A address to B address', async function () {
         // Minting an initial amount of tokens to ownerA's address in the NonFungibleMoodA contract
-        const initialTokenId = 0
-        await NonFungibleMoodA.mint(ownerA.address, initialTokenId)
+
+        const initialTokenId = await NonFungibleMoodA.generateTokenId(0)
+        const encodedMoodData = await MoodBankA.connect(ownerA).encodeMood(moodData)
+        await NonFungibleMoodA.mint(true, encodedMoodData)
+        const totalSupply = await NonFungibleMoodA.totalSupply()
 
         // Defining extra message execution options for the send operation
         const options = Options.newOptions().addExecutorLzReceiveOption(200000, 0).toHex().toString()
@@ -88,5 +171,45 @@ describe('NonFungibleMood Test', function () {
         // Asserting that the final balances are as expected after the send operation
         expect(finalBalanceA).eql(ethers.BigNumber.from(0))
         expect(finalBalanceB).eql(ethers.BigNumber.from(1))
+    })
+
+    it('should mint and release reward token', async function () {
+        // Minting an initial amount of tokens to ownerA's address in the NonFungibleMoodA contract
+
+        const initialTokenId = await NonFungibleMoodA.generateTokenId(0)
+        const encodedMoodData = await MoodBankA.connect(ownerA).encodeMood(moodData)
+        await NonFungibleMoodA.mint(true, encodedMoodData)
+        const totalSupply = await NonFungibleMoodA.totalSupply()
+
+        // Fetching the final token balances of ownerA and ownerB
+        const finalBalanceA = await NonFungibleMoodA.balanceOf(ownerA.address)
+        const rewardBalanceA = await FungibleMoodA.balanceOf(ownerA.address)
+        console.log(rewardBalanceA)
+
+        // Asserting that the final balances are as expected after the send operation
+        expect(finalBalanceA).eql(ethers.BigNumber.from(1))
+        expect(Number(rewardBalanceA)).eql(1000000000000000000)
+    })
+
+    it('should accept FM and burn after mint', async function () {
+        // Minting an initial amount of tokens to ownerA's address in the NonFungibleMoodA contract
+
+        const initialTokenId = await NonFungibleMoodA.generateTokenId(0)
+        const encodedMoodData = await MoodBankA.connect(ownerA).encodeMood(moodData)
+        await NonFungibleMoodA.mint(true, encodedMoodData)
+
+        const encodedMoodData1 = await MoodBankA.connect(ownerA).encodeMood(moodData1)
+        await FungibleMoodA.approve(NonFungibleMoodA.address, 1000000000000000000n)
+        await NonFungibleMoodA.mint(false, encodedMoodData1)
+
+        // Fetching the final token balances of ownerA and ownerB
+        const finalBalanceA = await NonFungibleMoodA.balanceOf(ownerA.address)
+        const rewardBalanceA = await FungibleMoodA.balanceOf(ownerA.address)
+        console.log(finalBalanceA)
+        console.log(rewardBalanceA)
+
+        // Asserting that the final balances are as expected after the send operation
+        expect(Number(finalBalanceA)).eql(2)
+        expect(Number(rewardBalanceA)).eql(0)
     })
 })
