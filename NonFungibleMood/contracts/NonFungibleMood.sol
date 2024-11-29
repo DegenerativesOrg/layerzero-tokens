@@ -122,8 +122,16 @@ contract NonFungibleMood is ONFT721 {
 
     function burn(uint256 _tokenId) external {
         address currentOwner = ownerOf(_tokenId);
+
+        require(msg.sender == currentOwner, "Unauthorized burn access");
         _burn(_tokenId);
         totalSupply--;
+
+        // drop 1 Fungible Mood
         FM.claim(currentOwner, 1 ether);
+
+        // untokenize
+        bytes32 moodHash = MB.getHashByMoodId(getMoodId(_tokenId));
+        MB.tokenize(moodHash, false);
     }
 }

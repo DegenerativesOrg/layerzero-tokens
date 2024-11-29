@@ -17,6 +17,7 @@ contract MoodBank is Ownable(msg.sender), IMoodBank {
 
     mapping(bytes32 => string[]) public hashToMood;
     mapping(bytes32 => uint256) public hashToId;
+    mapping(uint256 => bytes32) public idToHash;
 
     constructor() {}
 
@@ -44,10 +45,13 @@ contract MoodBank is Ownable(msg.sender), IMoodBank {
 
         bytes32 moodHash = hash(mood.emojis); // Use the correct function name (hash instead of _hash)
         moodUsers[moodHash].push(mood.user);
+        idToHash[newMoodId] = moodHash;
 
         bool isTokenized;
         isTokenized = tokenized[moodHash];
-        tokenized[moodHash] = true;
+        if (!isTokenized) {
+            tokenized[moodHash] = true;
+        }
 
         totalMood++;
         return (newMoodId, mood.user, isTokenized);
@@ -88,8 +92,27 @@ contract MoodBank is Ownable(msg.sender), IMoodBank {
             );
     }
 
+    function setTokenized(Mood calldata _mood) external pure returns (bytes memory) {
+        return
+            abi.encode(
+                _mood.chainId,
+                _mood.timestamp,
+                _mood.emojis,
+                _mood.themeAddress,
+                _mood.bgColor,
+                _mood.fontColor,
+                _mood.expansionLevel,
+                _mood.user
+            );
+    }
+
     function authorize(address addr, bool isAuthorized) external onlyOwner {
         authorized[addr] = isAuthorized;
+    }
+
+    function tokenize(bytes32 moodHash, bool isTokenized) external {
+        require(authorized[msg.sender], "Caller not authorized");
+        tokenized[moodHash] = isTokenized;
     }
 
     /// @notice Gets the mood data for a given mood ID.
@@ -140,6 +163,10 @@ contract MoodBank is Ownable(msg.sender), IMoodBank {
 
     function getMoodIdOfHash(bytes32 moodHash) external view returns (uint256) {
         return hashToId[moodHash];
+    }
+
+    function getHashByMoodId(uint256 moodId) external view returns (bytes32) {
+        return idToHash[moodId];
     }
 
     function getMoodUserCount(string[] memory mood) external view returns (uint256) {
