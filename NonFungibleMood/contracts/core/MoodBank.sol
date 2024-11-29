@@ -8,6 +8,7 @@ contract MoodBank is Ownable(msg.sender), IMoodBank {
     uint256 public totalMood;
 
     mapping(address => bool) public authorized;
+    mapping(bytes32 => bool) public tokenized;
 
     mapping(uint256 => address) public owners;
     mapping(address => Mood[]) public userMoods;
@@ -24,7 +25,7 @@ contract MoodBank is Ownable(msg.sender), IMoodBank {
     /// @param _moodData Bytes data containing encoded mood information (emojis, theme, colors, etc.).
     /// @return newMoodId The ID of the newly added mood.
     /// @return user The address of the user who added the mood.
-    function addMood(bytes calldata _moodData) external payable returns (uint256, address) {
+    function addMood(bytes calldata _moodData) external payable returns (uint256, address, bool) {
         require(authorized[msg.sender], "Caller not authorized");
 
         Mood memory mood = decodeMood(_moodData);
@@ -44,8 +45,12 @@ contract MoodBank is Ownable(msg.sender), IMoodBank {
         bytes32 moodHash = hash(mood.emojis); // Use the correct function name (hash instead of _hash)
         moodUsers[moodHash].push(mood.user);
 
+        bool isTokenized;
+        isTokenized = tokenized[moodHash];
+        tokenized[moodHash] = true;
+
         totalMood++;
-        return (newMoodId, mood.user);
+        return (newMoodId, mood.user, isTokenized);
     }
 
     /// @notice Decodes mood data from bytes.

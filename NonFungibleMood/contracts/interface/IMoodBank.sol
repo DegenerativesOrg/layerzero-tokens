@@ -15,7 +15,7 @@ struct Mood {
 }
 
 interface IMoodBank {
-    function addMood(bytes calldata mood) external payable returns (uint256, address);
+    function addMood(bytes calldata mood) external payable returns (uint256, address, bool);
     function decodeMood(bytes calldata _moodData) external pure returns (Mood memory);
     function encodeMood(Mood calldata _mood) external pure returns (bytes memory);
     function getMoodById(uint256 moodId) external view returns (Mood memory);
