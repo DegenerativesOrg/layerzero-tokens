@@ -59,9 +59,9 @@ contract NonFungibleMood is ONFT721 {
 
     function mint(bool _payNative, bytes calldata _moodData) public payable returns (uint256) {
         uint256 newTokenId = generateTokenId(tokenIds);
-        (uint256 moodId, address receiver, bool tokenized) = premint(_moodData);
+        (uint256 moodId, address receiver, bool alreadyTokenized) = MB.addMood(_moodData, true);
         require(receiver != address(0), "No receiver");
-        require(!tokenized, "Tokenized");
+        require(!alreadyTokenized, "Tokenized");
 
         bool isPaid;
 
@@ -86,13 +86,13 @@ contract NonFungibleMood is ONFT721 {
         return newTokenId;
     }
 
-    function premint(bytes calldata _moodData) public returns (uint256, address, bool) {
-        (uint256 moodId, address receiver, bool tokenized) = MB.addMood(_moodData);
-        return (moodId, receiver, tokenized);
+    function premint(bytes calldata _moodData) public {
+        MB.addMood(_moodData, false);
     }
 
     function price(uint256 supply) public pure returns (uint256) {
-        return 1 ether * (supply ** 2);
+        return 1 ether + 10e12 * (supply ** 2);
+        // return 0.005 ether + 10e12 * (supply ** 2); // eth/weth as native
     }
 
     function tokenURI(uint256 tokenId) public view override returns (string memory) {

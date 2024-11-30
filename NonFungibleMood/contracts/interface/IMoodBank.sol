@@ -11,11 +11,11 @@ struct Mood {
     string bgColor;
     string fontColor;
     uint8 expansionLevel;
-    address user;
+    address creator;
 }
 
 interface IMoodBank {
-    function addMood(bytes calldata mood) external payable returns (uint256, address, bool);
+    function addMood(bytes calldata _moodData, bool _tokenize) external payable returns (uint256, address, bool);
     function decodeMood(bytes calldata _moodData) external pure returns (Mood memory);
     function tokenize(bytes32 moodHash, bool isTokenized) external;
     function encodeMood(Mood calldata _mood) external pure returns (bytes memory);
@@ -25,7 +25,7 @@ interface IMoodBank {
     function getUserMoodLength(address user) external view returns (uint256);
     function getMoodDataByIndex(address user, uint256 i) external view returns (Mood memory);
     function getMoodOfHash(bytes32 moodHash) external view returns (string[] memory);
-    function getMoodIdOfHash(bytes32 moodHash) external view returns (uint256);
+    function getMoodIdOfHash(bytes32 moodHash) external view returns (uint256[] memory);
     function getMoodUserCount(string[] memory mood) external view returns (uint256);
     function getHashByMoodId(uint256 moodId) external view returns (bytes32);
     function getMoodUserByIndex(string[] memory mood, uint256 index) external view returns (address);

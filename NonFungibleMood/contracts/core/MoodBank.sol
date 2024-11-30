@@ -9,14 +9,15 @@ contract MoodBank is Ownable(msg.sender), IMoodBank {
 
     mapping(address => bool) public authorized;
     mapping(bytes32 => bool) public tokenized;
+    mapping(bytes32 => uint256) public tokenizedBy;
 
-    mapping(uint256 => address) public owners;
+    mapping(uint256 => address) public creators;
     mapping(address => Mood[]) public userMoods;
     mapping(address => uint256[]) public moodIds;
     mapping(bytes32 => address[]) public moodUsers;
 
     mapping(bytes32 => string[]) public hashToMood;
-    mapping(bytes32 => uint256) public hashToId;
+    mapping(bytes32 => uint256[]) public hashToIds;
     mapping(uint256 => bytes32) public idToHash;
 
     constructor() {}
@@ -25,36 +26,39 @@ contract MoodBank is Ownable(msg.sender), IMoodBank {
     /// @dev Decodes mood data from bytes and stores it.
     /// @param _moodData Bytes data containing encoded mood information (emojis, theme, colors, etc.).
     /// @return newMoodId The ID of the newly added mood.
-    /// @return user The address of the user who added the mood.
-    function addMood(bytes calldata _moodData) external payable returns (uint256, address, bool) {
+    /// @return creator The address of the creator who added the mood.
+    function addMood(bytes calldata _moodData, bool _tokenize) external payable returns (uint256, address, bool) {
         require(authorized[msg.sender], "Caller not authorized");
 
         Mood memory mood = decodeMood(_moodData);
 
-        require(mood.user != address(0), "Zero address");
+        require(mood.creator != address(0), "Zero address");
         require(mood.emojis.length > 0, "No emojis");
 
         uint256 newMoodId = totalMood;
 
-        userMoods[mood.user].push(mood);
-        owners[newMoodId] = mood.user;
+        userMoods[mood.creator].push(mood);
+        creators[newMoodId] = mood.creator;
 
         // It's unclear what the purpose of moodIds is, as the mood ID can be derived from the
         // index in the userMoods array. If you need to keep it, make sure the logic is correct.
-        moodIds[mood.user].push(newMoodId);
+        moodIds[mood.creator].push(newMoodId);
 
         bytes32 moodHash = hash(mood.emojis); // Use the correct function name (hash instead of _hash)
-        moodUsers[moodHash].push(mood.user);
+        moodUsers[moodHash].push(mood.creator);
         idToHash[newMoodId] = moodHash;
+        hashToIds[moodHash].push(newMoodId);
 
-        bool isTokenized;
-        isTokenized = tokenized[moodHash];
-        if (!isTokenized) {
-            tokenized[moodHash] = true;
+        bool alreadyTokenized;
+        alreadyTokenized = tokenized[moodHash];
+
+        if (_tokenize) {
+            tokenize(moodHash, true);
+            tokenizedBy[moodHash] = newMoodId;
         }
 
         totalMood++;
-        return (newMoodId, mood.user, isTokenized);
+        return (newMoodId, mood.creator, alreadyTokenized);
     }
 
     /// @notice Decodes mood data from bytes.
@@ -69,10 +73,10 @@ contract MoodBank is Ownable(msg.sender), IMoodBank {
             string memory bgColor,
             string memory fontColor,
             uint8 expansionLevel,
-            address user
+            address creator
         ) = abi.decode(_moodData, (uint256, uint256, string[], address, string, string, uint8, address));
 
-        return Mood(chainId, timestamp, emojis, themeAddress, bgColor, fontColor, expansionLevel, user);
+        return Mood(chainId, timestamp, emojis, themeAddress, bgColor, fontColor, expansionLevel, creator);
     }
 
     /// @notice Encodes mood data into bytes.
@@ -88,21 +92,7 @@ contract MoodBank is Ownable(msg.sender), IMoodBank {
                 _mood.bgColor,
                 _mood.fontColor,
                 _mood.expansionLevel,
-                _mood.user
-            );
-    }
-
-    function setTokenized(Mood calldata _mood) external pure returns (bytes memory) {
-        return
-            abi.encode(
-                _mood.chainId,
-                _mood.timestamp,
-                _mood.emojis,
-                _mood.themeAddress,
-                _mood.bgColor,
-                _mood.fontColor,
-                _mood.expansionLevel,
-                _mood.user
+                _mood.creator
             );
     }
 
@@ -110,7 +100,7 @@ contract MoodBank is Ownable(msg.sender), IMoodBank {
         authorized[addr] = isAuthorized;
     }
 
-    function tokenize(bytes32 moodHash, bool isTokenized) external {
+    function tokenize(bytes32 moodHash, bool isTokenized) public {
         require(authorized[msg.sender], "Caller not authorized");
         tokenized[moodHash] = isTokenized;
     }
@@ -119,11 +109,11 @@ contract MoodBank is Ownable(msg.sender), IMoodBank {
     /// @param moodId The ID of the mood.
     /// @return The Mood struct corresponding to the given mood ID.
     function getMoodById(uint256 moodId) external view returns (Mood memory) {
-        // Find the user who owns this moodId
-        address user = owners[moodId];
-        require(user != address(0), "Invalid mood ID");
+        // Find the creator who owns this moodId
+        address creator = creators[moodId];
+        require(creator != address(0), "Invalid mood ID");
 
-        Mood[] storage userMoodsArray = userMoods[user];
+        Mood[] storage userMoodsArray = userMoods[creator];
         for (uint256 i = 0; i < userMoodsArray.length; i++) {
             if (i == moodId) {
                 return userMoodsArray[i];
@@ -133,13 +123,13 @@ contract MoodBank is Ownable(msg.sender), IMoodBank {
     }
 
     function getOwner(uint256 moodId) external view returns (address) {
-        return owners[moodId];
+        return creators[moodId];
     }
 
     function getMoodLength(uint256 moodId) external view returns (uint256) {
-        address user = owners[moodId];
-        require(user != address(0), "Invalid mood ID");
-        Mood[] storage userMoodsArray = userMoods[user];
+        address creator = creators[moodId];
+        require(creator != address(0), "Invalid mood ID");
+        Mood[] storage userMoodsArray = userMoods[creator];
         for (uint256 i = 0; i < userMoodsArray.length; i++) {
             if (i == moodId) {
                 return userMoodsArray[i].emojis.length;
@@ -148,21 +138,21 @@ contract MoodBank is Ownable(msg.sender), IMoodBank {
         revert("Mood not found");
     }
 
-    function getUserMoodLength(address user) external view returns (uint256) {
-        return userMoods[user].length;
+    function getUserMoodLength(address creator) external view returns (uint256) {
+        return userMoods[creator].length;
     }
 
-    function getMoodDataByIndex(address user, uint256 i) external view returns (Mood memory) {
-        require(i < userMoods[user].length, "Index out of bounds"); // Add bounds check
-        return userMoods[user][i];
+    function getMoodDataByIndex(address creator, uint256 i) external view returns (Mood memory) {
+        require(i < userMoods[creator].length, "Index out of bounds"); // Add bounds check
+        return userMoods[creator][i];
     }
 
     function getMoodOfHash(bytes32 moodHash) external view returns (string[] memory) {
         return hashToMood[moodHash];
     }
 
-    function getMoodIdOfHash(bytes32 moodHash) external view returns (uint256) {
-        return hashToId[moodHash];
+    function getMoodIdOfHash(bytes32 moodHash) external view returns (uint256[] memory) {
+        return hashToIds[moodHash];
     }
 
     function getHashByMoodId(uint256 moodId) external view returns (bytes32) {

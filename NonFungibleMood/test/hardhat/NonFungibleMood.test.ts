@@ -71,7 +71,7 @@ describe('NonFungibleMood Test', function () {
             bgColor: 'blue',
             fontColor: 'white',
             expansionLevel: 5,
-            user: ownerA.address,
+            creator: ownerA.address,
         }
 
         moodData1 = {
@@ -82,7 +82,7 @@ describe('NonFungibleMood Test', function () {
             bgColor: 'blue',
             fontColor: 'white',
             expansionLevel: 5,
-            user: ownerA.address,
+            creator: ownerA.address,
         }
 
         const network = await ethers.provider.getNetwork()
@@ -130,7 +130,7 @@ describe('NonFungibleMood Test', function () {
         // 1. Encode mood data
 
         const encodedMoodData = await MoodBankA.connect(ownerA).encodeMood(moodData)
-        const moodId = await MoodBankA.connect(ownerA).addMood(encodedMoodData)
+        const moodId = await MoodBankA.connect(ownerA).addMood(encodedMoodData, false)
 
         // 2. Add mood to MoodBankA
         const moodSupply = await MoodBankA.connect(ownerA).totalMood()

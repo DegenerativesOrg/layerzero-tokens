@@ -54,17 +54,37 @@ const config: HardhatUserConfig = {
     networks: {
         'sepolia-testnet': {
             eid: EndpointId.SEPOLIA_V2_TESTNET,
-            url: process.env.RPC_URL_SEPOLIA || 'https://rpc.sepolia.org/',
+            url: 'https://rpc.sepolia.org/',
             accounts,
         },
-        'avalanche-testnet': {
-            eid: EndpointId.AVALANCHE_V2_TESTNET,
-            url: process.env.RPC_URL_FUJI || 'https://rpc.ankr.com/avalanche_fuji',
+        'base-testnet': {
+            eid: EndpointId.BASESEP_V2_TESTNET,
+            url: 'https://sepolia.base.org/',
+            accounts,
+        },
+        'core-testnet': {
+            eid: EndpointId.COREDAO_V2_TESTNET,
+            url: 'https://rpc.test.btcs.network/',
+            accounts,
+        },
+        'etherlink-testnet': {
+            eid: EndpointId.ETHERLINK_V2_TESTNET,
+            url: 'https://node.ghostnet.etherlink.com/',
             accounts,
         },
         'amoy-testnet': {
             eid: EndpointId.AMOY_V2_TESTNET,
-            url: process.env.RPC_URL_AMOY || 'https://polygon-amoy-bor-rpc.publicnode.com',
+            url: 'https://rpc-amoy.polygon.technology/',
+            accounts,
+        },
+        'unichain-testnet': {
+            eid: EndpointId.UNICHAIN_V2_TESTNET,
+            url: 'https://sepolia.unichain.org/',
+            accounts,
+        },
+        'taiko-testnet': {
+            eid: EndpointId.TAIKO_V2_TESTNET,
+            url: 'https://holesky.drpc.org/',
             accounts,
         },
         hardhat: {
