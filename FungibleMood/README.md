@@ -381,7 +381,7 @@ By following these steps, you can focus more on creating innovative omnichain so
 Fill out your `layerzero.config.ts` with the contracts you want to connect. You can generate the default config file for your declared hardhat networks by running:
 
 ```bash
-npx hardhat lz:oapp:config:init --contract-name [YOUR_CONTRACT_NAME] --oapp-config [CONFIG_NAME]
+npx hardhat lz:oapp:config:init --contract-name NonFungibleMood --oapp-config layerzero.config.ts
 ```
 
 > [!NOTE]

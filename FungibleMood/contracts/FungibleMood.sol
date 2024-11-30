@@ -9,7 +9,6 @@ import { OFT } from "@layerzerolabs/oft-evm/contracts/OFT.sol";
 import { IFungibleMood } from "./interface/IFungibleMood.sol";
 
 /// @title FungibleMood
-/// @author Rald Blox | raldblox.eth
 /// @notice This contract implements a fungible token (MOOD) with cross-chain functionality using LayerZero OFT.
 /// It also includes migration functionality from an old token contract.
 contract FungibleMood is OFT, IFungibleMood {
@@ -45,6 +44,7 @@ contract FungibleMood is OFT, IFungibleMood {
     /// @return True if minting was successful.
     function claim(address _account, uint256 _value) external returns (bool) {
         require(NONFUNGIBLEMOOD == msg.sender, "Only non-fungible mood can issue reward");
+        require(totalSupply() + _value <= MAXTOKENSUPPLY, "Max token supply reached");
         _mint(_account, _value);
         return true;
     }
@@ -64,8 +64,9 @@ contract FungibleMood is OFT, IFungibleMood {
     /// @param _value Amount of old tokens to migrate.
     /// @return True if migration was successful.
     function migrate(uint256 _value) external returns (bool) {
-        require(timeNow() > ENDOFMIGRATION, "Migration ended");
-        require(IERC20(OLDMOOD).transfer(address(0xdead), _value), "Failed to burn old tokens");
+        require(timeNow() < ENDOFMIGRATION, "Migration ended");
+        require(totalSupply() + _value <= MAXTOKENSUPPLY, "Max token supply reached");
+        require(IERC20(OLDMOOD).transferFrom(msg.sender, address(0xdead), _value), "Failed to burn old tokens");
         _mint(msg.sender, (_value / 1000));
         return true;
     }

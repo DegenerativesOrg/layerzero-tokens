@@ -57,6 +57,11 @@ const config: HardhatUserConfig = {
             url: 'https://rpc.sepolia.org/',
             accounts,
         },
+        'metis-testnet': {
+            eid: EndpointId.METIS_V2_TESTNET,
+            url: 'https://sepolia.metisdevops.link/',
+            accounts,
+        },
         'base-testnet': {
             eid: EndpointId.BASESEP_V2_TESTNET,
             url: 'https://sepolia.base.org/',

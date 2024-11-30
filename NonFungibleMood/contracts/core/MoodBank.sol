@@ -100,9 +100,13 @@ contract MoodBank is Ownable(msg.sender), IMoodBank {
         authorized[addr] = isAuthorized;
     }
 
-    function tokenize(bytes32 moodHash, bool isTokenized) public {
+    function tokenize(bytes32 moodHash, bool _tokenized) public {
         require(authorized[msg.sender], "Caller not authorized");
-        tokenized[moodHash] = isTokenized;
+        tokenized[moodHash] = _tokenized;
+    }
+
+    function isTokenized(bytes32 moodHash) external view returns (bool) {
+        return tokenized[moodHash];
     }
 
     /// @notice Gets the mood data for a given mood ID.

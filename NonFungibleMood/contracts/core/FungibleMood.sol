@@ -62,8 +62,8 @@ contract FungibleMood is ERC20, IFungibleMood, Ownable {
     /// @param _value Amount of old tokens to migrate.
     /// @return True if migration was successful.
     function migrate(uint256 _value) external returns (bool) {
-        require(timeNow() > ENDOFMIGRATION, "Migration ended");
-        require(IERC20(OLDMOOD).transfer(address(0xdead), _value), "Failed to burn old tokens");
+        require(timeNow() < ENDOFMIGRATION, "Migration ended");
+        require(IERC20(OLDMOOD).transferFrom(msg.sender, address(0xdead), _value), "Failed to burn old tokens");
         _mint(msg.sender, (_value / 1000));
         return true;
     }

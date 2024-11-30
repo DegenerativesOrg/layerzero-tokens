@@ -18,6 +18,7 @@ interface IMoodBank {
     function addMood(bytes calldata _moodData, bool _tokenize) external payable returns (uint256, address, bool);
     function decodeMood(bytes calldata _moodData) external pure returns (Mood memory);
     function tokenize(bytes32 moodHash, bool isTokenized) external;
+    function isTokenized(bytes32 moodHash) external view returns (bool);
     function encodeMood(Mood calldata _mood) external pure returns (bytes memory);
     function getMoodById(uint256 moodId) external view returns (Mood memory);
     function getOwner(uint256 moodId) external view returns (address);
