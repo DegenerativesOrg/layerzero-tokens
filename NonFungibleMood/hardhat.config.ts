@@ -112,6 +112,11 @@ const config: HardhatUserConfig = {
             url: 'https://polygon-rpc.com/',
             accounts,
         },
+        metis: {
+            eid: EndpointId.METIS_V2_MAINNET,
+            url: 'https://andromeda.metis.io/?owner=1088',
+            accounts,
+        },
         hardhat: {
             // Need this for testing because TestHelperOz5.sol is exceeding the compiled contract size limit
             allowUnlimitedContractSize: true,

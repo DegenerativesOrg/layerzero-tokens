@@ -57,6 +57,11 @@ const config: HardhatUserConfig = {
             url: 'https://rpc.sepolia.org/',
             accounts,
         },
+        'metis-testnet': {
+            eid: EndpointId.METIS_V2_TESTNET,
+            url: 'https://sepolia.metisdevops.link/',
+            accounts,
+        },
         'base-testnet': {
             eid: EndpointId.BASESEP_V2_TESTNET,
             url: 'https://sepolia.base.org/',
@@ -85,6 +90,31 @@ const config: HardhatUserConfig = {
         'taiko-testnet': {
             eid: EndpointId.TAIKO_V2_TESTNET,
             url: 'https://holesky.drpc.org/',
+            accounts,
+        },
+        etherlink: {
+            eid: EndpointId.ETHERLINK_V2_MAINNET,
+            url: 'https://node.mainnet.etherlink.com/',
+            accounts,
+        },
+        base: {
+            eid: EndpointId.BASE_V2_MAINNET,
+            url: 'https://mainnet.base.org/',
+            accounts,
+        },
+        core: {
+            eid: EndpointId.COREDAO_V2_MAINNET,
+            url: 'https://core.public-rpc.com/',
+            accounts,
+        },
+        polygon: {
+            eid: EndpointId.POLYGON_V2_MAINNET,
+            url: 'https://polygon-rpc.com/',
+            accounts,
+        },
+        metis: {
+            eid: EndpointId.METIS_V2_MAINNET,
+            url: 'https://andromeda.metis.io/?owner=1088',
             accounts,
         },
         hardhat: {

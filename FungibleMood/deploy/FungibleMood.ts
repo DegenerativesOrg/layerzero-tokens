@@ -3,7 +3,8 @@ import assert from 'assert'
 import { type DeployFunction } from 'hardhat-deploy/types'
 
 const contractName = 'FungibleMood'
-const nonFungibleMood = '0x414567410e349E7b9b255291aE749809Dc3694f3'
+const nonFungibleMood = '0xd8DCFCC481ecE562C5263C8C7308324DfC9043b0'
+const oldMood = '0x5ae9108bC677e5269b6E71AE51DD15d19863Da1c'
 
 const deploy: DeployFunction = async (hre) => {
     const { getNamedAccounts, deployments } = hre
@@ -20,7 +21,7 @@ const deploy: DeployFunction = async (hre) => {
 
     const { address } = await deploy(contractName, {
         from: deployer,
-        args: [endpointV2Deployment.address, deployer, nonFungibleMood, nonFungibleMood],
+        args: [endpointV2Deployment.address, deployer, nonFungibleMood],
         log: true,
         skipIfAlreadyDeployed: false,
     })

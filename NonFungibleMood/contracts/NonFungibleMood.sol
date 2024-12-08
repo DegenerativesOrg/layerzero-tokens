@@ -111,7 +111,7 @@ contract NonFungibleMood is ONFT721 {
     }
 
     function price(uint256 supply) public pure returns (uint256) {
-        return 1 ether + 10e12 * (supply ** 2);
+        return 0.025 ether + 10e12 * (supply ** 2);
         // return 0.005 ether + 10e12 * (supply ** 2); // eth/weth as native
     }
 
